@@ -1,0 +1,227 @@
+ 
+ LOS NOMBRES DEBEN SER UNIQUE
+
+ RUTAS, EXCURSIONES, SITIOS
+
+ //////////////////////
+ /INSERCIÓN DE RUTAS//
+ ////////////////////
+
+  ****************
+ * VALORES NUEVOS *
+  ****************
+ :new.idSitio
+ :new.idExcursion
+ :new.idRC
+ :new.FechaCreacion
+ 
+
+ OBTENER TODOS LOS NODOS QUE ESTÉN ACTIVOS (Estado = 1), lnk_name
+ 
+  --Recorrido de los registros
+  nodo_rec 
+ 
+ POR CADA NODO ACTIVO
+ HACER
+  
+     idSitio_out
+     idExcursion_out
+     idRC_out 
+     
+	VALIDAR_SITIO_TURISTICO(nodo_rec.lnk_name, :new.idSitio, idSitio_out);  --Este debe retornar el id del sitio turístico equivalente al del nodo, si no existe lo debe crear
+        VALIDAR_EXCURSION(nodo_rec.lnk_name, :new.idExcursion, :new.idRC, idExcursion_out, idRC_out ); -- Se encarga de validar si existe la excursión asociada si no la crea 
+  	INSERTAR_RUTA(nodo_rec.lnk_name, idSitio_out, idExcursion_out, idRC_out); --Se encarga de insertar los datos a la tabla remota
+  	
+ FIN
+
+
+
+ VALIDAR_SITIO_TURISTICO (NombreNodo, IdSito_In, IdSitio_out)
+
+   nombre_sitio_local
+   descripcion_local
+   idRegion_local
+   idMunicipio_local
+   idDepartamento_local
+   idRC_local
+   
+
+   idSitio_remoto
+   
+
+   SELECT nombre, descripcion, 
+          idRegion, idMunicipio, 
+          idDepartamento, idRC
+   INTO   nombre_sitio_local, descripcion_local, 
+          idregion_local, idMunicipio, 
+          idDepartamento, idRC
+   FROM SITIO_TURISTICO
+   WHERE SL.idsitio = IdSitio_In;
+
+
+   SELECT "idSitio"
+   INTO   idSitio_remoto
+   FROM dbo.SITIO_TURISTICO@NombreNodo
+   WHERE "Nombre"   = nombre_sitio_local   		AND
+	 "idRegion" = idRegion_local 			AND 
+         "idMunicipio" = idMunicipio_local 		AND
+         "idDepartamento" = idDepartamento_local;
+
+
+   IdSitio_out := idSitio_remoto;
+
+
+   SI NO HAY DATA ENTONCES
+	INSERT INTO dbo.SITIO_TURISTICO@NombreNodo ("Nombre", "Descripcion", "idRegion", "idMunicipio", "idDepartamento", "idRC")
+	VALUES (nombre_sitio_local,descripcion_local,idRegion_local, idMunicipio_local,idDepartamento_local, idRC_local);
+	
+        SELECT "idSito"
+	INTO IdSitio_out
+	FROM dbo.SITIO_TURISTICO@NombreNodo
+	WHERE "Nombre" = nombre_sitio_local;
+
+ FIN;
+   
+ 
+
+ VALIDAR_EXCURSION (NombreNodo, IdExcursion_In, IdRC_In, IdExcursion_Out, IdRC_Out)
+
+   nombre_exc_local
+   descripcion_local
+   idRC_local
+   
+   idExcursion_remoto
+   idRC_remoto
+
+
+   SELECT nombre, descripcion, idrc
+   INTO nombre_exc_local, descripcion_local
+   FROM EXCURSION
+   WHERE idExcursion = idExcurson_In AND
+	 idRC = idRC_local;
+
+
+   SELECT "idExcursion", "idRC"
+   INTO idExcursion_remoto,idRC_remoto 
+   FROM dbo.EXCURSION@NombreNodo
+   WHERE "Nombre" = nombre_exc_local;
+
+   
+   IdExcursion_Out := idExcursion_remoto;
+   IdRC_In := idRC_remoto;
+
+
+   SI NO HAY DATA ENTONCES
+	INSERT INTO dbo.EXCURSION@NombreNodo ("Nombre", "Descripcion", "idRC")
+	VALUES (nombre_exc_local,descripcion_local,idRC_local);
+	
+        SELECT "idExcursion", "idRC"
+	INTO IdExcursion_Out, IdRC_Out
+	FROM dbo.EXCURSION@NombreNodo
+	WHERE "Nombre" = nombre_exc_local;  
+
+
+ FIN;
+   
+
+ INSERTAR_RUTA (NombreNodo, IdSitio_In, IdExcursion_In, IdRC_In)  
+ 
+
+	INSERT INTO dbo.RUTA@NombreNodo ("idSitio","idExcursion","idRC")
+        VALUES (IdSitio_In, IdExcursion_In, IdRC_In);
+
+
+ FIN;
+
+
+
+ ////////////////////////////
+ /ASIGNACIÓN DE EXCURSIONES/
+ //////////////////////////
+
+
+ 
+  ****************
+ * VALORES NUEVOS *
+  ****************
+ :new.idTurista
+ :new.idExcursion
+ :new.idRC
+ :new.FechaCreacion
+ 
+
+ OBTENER TODOS LOS NODOS QUE ESTÉN ACTIVOS (Estado = 1), lnk_name
+ 
+  --Recorrido de los registros
+  nodo_rec 
+ 
+ POR CADA NODO ACTIVO
+ HACER
+  
+     idTurista_out
+     idExcursion_out
+     idRC_out 
+     
+	VALIDAR_TURISTA(nodo_rec.lnk_name, :new.idTurista, idTurista_out);
+        VALIDAR_EXCURSION(nodo_rec.lnk_name, :new.idExcursion, :new.idRC, idExcursion_out, idRC_out ); -- Se encarga de validar si existe la excursión asociada si no la crea 
+	INSERTAR_ASIGNACION_EXCURSION(nodo_rec.lnk_name,idTurista_out, idExcursion_out, idRC_out)); --Se encarga de insertar los datos a la tabla remota
+  	
+ FIN
+
+ VALIDAR_TURISTA (NombreNodo, IdTurista_In, IdTurista_Out)
+
+   idTurista_local
+   idTipoDocumento_local
+   idRC_local
+   nombre_local
+   direccion_local
+   telefono_local
+   sexo_local
+   fecha_nacimiento_local
+   idPais_local
+
+
+   idTurista_remoto
+
+
+   SELECT documento, idtipodocumento, idrc, nombre, 
+	  direccion, telefono, sexo, fecha_nacimiento, 
+          idpais
+   INTO idTurista_local, idTipoDocumento_local, idRC_local,
+        nombre_local, direccion_local, telefono_local,
+        sexo_local, fecha_nacimiento_local, idPais_local
+   FROM TURISTA
+   WHERE documento = IdTurista_In;
+
+
+   SELECT "documento"
+   INTO idTurista_remoto
+   FROM dbo.TURISTA@NombreNodo
+   WHERE "documento" = idTurista_local;
+
+
+   SI NO HAY DATOS ENTONCES SE CREA EL TURISTA
+
+    	VALIDAR_TIPO_DOCUMENTO()
+
+    INSERT INTO dbo.TURISTA ("documento", 
+
+ FIN;
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
